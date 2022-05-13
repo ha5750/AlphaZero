@@ -1,1 +1,1 @@
-# AlphaZeroGomoku
+# AlphaZero
