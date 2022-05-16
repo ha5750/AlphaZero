@@ -148,7 +148,93 @@ class Game(object):
         '''
         Displays the board with game info
         '''
-        
+        print("Player", player1, "with X".rjust(3))
+        print("Player", player2, "with O".rjust(3))
+        print()
+        for x in range(board.n):
+            print("{0:8}".format(x), end='')
+        print('\r\n')
+        for i in range(board.n - 1, -1, -1):
+            print("{0:4d}".format(i), end='')
+            for j in range(board.n):
+                move = i * board.n + j
+                player = board.states.get(move, -1)
+                if (player == -1):
+                    print('_'.center(8), end='')
+                elif (player == player1):
+                    print('X'.center(8), end='')
+                elif (player == player2):
+                    print('O'.center(8), end='')
+            print('\r\n\r\n')
+    
+    def start_play(self, player1, player2, start_player = 0, show_board = 1):
+        '''
+        starts game with two players
+        '''
+        self.board.init_board(start_player)
+        p1, p2 = self.board.players
+        player1.set_player_ind(p1)
+        player2.set_player_ind(p2)
+        players = {p1: player1, p2: player2}
+        if show_board:
+            self.display(self.board, player1.player, player2.player)
+        while True:
+            cur_player = self.board.get_cur_player()
+            player_in_turn = players[cur_player]
+            move = player_in_turn.get_action(self.board)
+            self.board.do_move(move)
+            if show_board:
+                self.displaY(self.board, player1.player, player2.player)
+            end, winner = self.board.game_done()
+            if end:
+                if show_board:
+                    if winner != -1:
+                        print("Game end. Winner is", players[winner])
+                    else:
+                        print("Game end. Tie")
+                return winner
+
+    def start_self_play(self, player, show_board=0, temp=1e-3):
+        '''
+        starts a self-play game using MCTS, and store the self-play data
+        (state, mcts_probs, z) for training
+        '''
+        self.board.init_board()
+        p1, p2 = self.board.players
+        states, mcts_probs, current_players = [], [], []
+        while True:
+            move, move_probs = player.get_action(self.board, temp=temp,
+                                                return_prob = 1)
+            #store data
+            states.append(self.board.cur_state())
+            mcts_probs.append(move_probs)
+            current_players.append(self.board.current_players)
+            #perform a move
+            self.board.do_move(move)
+            if show_board:
+                self.display(self.board, p1, p2)
+            end, winner = self.board.game_end()
+            if end:
+                winners_z = np.zeros(len(current_players))
+                if winner != -1:
+                    winners_z[np.array(current_players) == winner] = 1.0
+                    winners_z[np.array(current_players) != winner] = -1.0
+                #reset MCTS root node
+                if show_board:
+                    if winner != -1:
+                        print("Game end. WInner is player:", winner)
+                    else:
+                        print("Game end. Draw")
+                return winner, zip(states, mcts_probs, winners_z)
+
+
+
+
+
+
+    
+
+
 
 
 
