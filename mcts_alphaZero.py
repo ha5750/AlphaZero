@@ -1,6 +1,5 @@
-
 """
-MCTS in AlphaGo Zero style, which uses a policy-value
+Monte Carlo Tree Search in AlphaGo Zero style, which uses a policy-value
 network to guide the tree search and evaluate the leaf nodes
 """
 
@@ -202,6 +201,9 @@ class MCTSPlayer(object):
                 move = np.random.choice(acts, p=probs)
                 # reset the root node
                 self.mcts.update_with_move(-1)
+#                location = board.move_to_location(move)
+#                print("AI move: %d,%d\n" % (location[0], location[1]))
+
             if return_prob:
                 return move, move_probs
             else:

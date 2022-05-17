@@ -1,7 +1,7 @@
-'''
-Pure Monte Carlo Tree Search implementation
-'''
+"""
+A pure implementation of the Monte Carlo Tree Search (MCTS)
 
+"""
 
 import numpy as np
 import copy
@@ -157,6 +157,7 @@ class MCTS(object):
     def get_move(self, state):
         """Runs all playouts sequentially and returns the most visited action.
         state: the current game state
+
         Return: the selected action
         """
         for n in range(self._n_playout):
@@ -201,3 +202,7 @@ class MCTSPlayer(object):
 
     def __str__(self):
         return "MCTS {}".format(self.player)
+#play_bath_size = 1
+#Line85collect_selfplay_data calls game.start_self_play(self.mcts_player, temp)
+    #mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn, c_punt, playout)
+        #

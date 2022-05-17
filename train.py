@@ -1,20 +1,29 @@
+# -*- coding: utf-8 -*-
+"""
+An implementation of the training pipeline of AlphaZero for Gomoku
+
+"""
+
+from __future__ import print_function
 import random
 import numpy as np
 from collections import defaultdict, deque
 from Game import Board, Game
 from mcts import MCTSPlayer as MCTS_Pure
 from mcts_alphaZero import MCTSPlayer
-from policy_value_network import PolicyValueNet  
+from policy_value_network import PolicyValueNet 
 import tensorflow as tf
-
+import argparse
 
 class TrainPipeline():
     def __init__(self, init_model=None):
         # params of the board and the game
-        self.board_width = 14
-        self.board_height = 14
+        self.board_width = 15
+        self.board_height = 15
         self.n_in_row = 5
-        self.board = Board(n = 14)
+        self.board = Board(width=self.board_width,
+                           height=self.board_height,
+                           n_in_row=self.n_in_row)
         self.game = Game(self.board)
         # training params
         self.learn_rate = 2e-3
@@ -28,12 +37,12 @@ class TrainPipeline():
         self.play_batch_size = 1
         self.epochs = 5  # num of train_steps for each update
         self.kl_targ = 0.02
-        self.check_freq = 50
+        self.check_freq = 300
         self.game_batch_num = 1500
         self.best_win_ratio = 0.0
         # num of simulations used for the pure mcts, which is used as
         # the opponent to evaluate the trained policy
-        self.pure_mcts_playout_num = 1000
+        self.pure_mcts_playout_num = 2000
         if init_model:
             # start training from an initial policy-value net
             self.policy_value_net = PolicyValueNet(self.board_width,
@@ -150,6 +159,29 @@ class TrainPipeline():
                 win_cnt[1], win_cnt[2], win_cnt[-1]))
         return win_ratio
 
+    def policy_evaluate2(self, best_policy, n_games=10):
+        """
+        Evaluate the trained policy by playing against the previous best policy
+        """
+        current_mcts_player = MCTSPlayer(self.policy_value_net.policy_value_fn,
+                                         c_puct=self.c_puct,
+                                         n_playout=self.n_playout)
+        previous_mcts_player = MCTSPlayer(best_policy.policy_value_fn,
+                                         c_puct=self.cpuct,
+                                         n_playout=self.n_playout)
+        win_cnt = defaultdict(int)
+        for i in range(n_games):
+            winner = self.game.start_play(current_mcts_player,
+                                          previous_mcts_player,
+                                          start_player=i % 2,
+                                          is_shown=0)
+            win_cnt[winner] += 1
+        win_ratio = 1.0*(win_cnt[1] + 0.5*win_cnt[-1]) / n_games
+        print("num_playouts:{}, win: {}, lose: {}, tie:{}".format(
+                self.n_playout,
+                win_cnt[1], win_cnt[2], win_cnt[-1]))
+        return win_ratio
+
     def run(self):
         """run the training pipeline"""
         try:
@@ -164,7 +196,12 @@ class TrainPipeline():
                 if (i+1) % self.check_freq == 0:
                     print("current self-play batch: {}".format(i+1))
                     win_ratio = self.policy_evaluate()
+                    #best_model = 'best_policy.model'
+                    #best_policy = PolicyValueNet(self.board_width, self.board_height, model_file = best_model)
+                    #win_ratio = self.policy_evaluate2(best_policy)
+                    
                     self.policy_value_net.save_model('./current_policy.model')
+                    
                     if win_ratio > self.best_win_ratio:
                         print("New best policy!!!!!!!!")
                         self.best_win_ratio = win_ratio
@@ -174,10 +211,26 @@ class TrainPipeline():
                                 self.pure_mcts_playout_num < 5000):
                             self.pure_mcts_playout_num += 1000
                             self.best_win_ratio = 0.0
+                    '''
+                    if win_ratio >= 0.6:
+                        print("New best policy!!!!!!!!!!")
+                        #update the best_policy
+                        self.policy_value_net.save_model('./best_policy.model')
+                    '''
+
         except KeyboardInterrupt:
             print('\n\rquit')
 
 
 if __name__ == '__main__':
-    training_pipeline = TrainPipeline()
+    # parse the commandline
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', help = "initial model if needed")
+    args = parser.parse_args()
+
+    tf.compat.v1.disable_eager_execution()
+    if args.model:
+        training_pipeline = TrainPipeline(args.model)
+    else:
+        training_pipeline = TrainPipeline()
     training_pipeline.run()
