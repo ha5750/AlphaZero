@@ -49,7 +49,7 @@ def run(model_name, start_player):
         board = Board(width=width, height=height, n_in_row=n)
         game = Game(board)
         best_policy = PolicyValueNet(width, height, model_file = model_name)
-        mcts_player = MCTSPlayer(best_policy.policy_value_fn, c_puct=5, n_playout=1000)
+        mcts_player = MCTSPlayer(best_policy.policy_value_fn, c_puct=5, n_playout=400)
 
         # human player, input your move in the format: 2,3
         human = Human()
