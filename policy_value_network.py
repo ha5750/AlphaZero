@@ -5,7 +5,7 @@ An implementation of the simpler version of policyValueNet in Tensorflow
 
 import numpy as np
 import tensorflow as tf
-
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 class PolicyValueNet():
     def __init__(self, board_width, board_height, model_file=None):

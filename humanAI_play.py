@@ -67,4 +67,6 @@ if __name__ == '__main__':
     parser.add_argument('--start', help = "0: Human goes first, 1: AI goes first")
     args = parser.parse_args()
     tf.compat.v1.disable_eager_execution()
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+
     run(args.model, int(args.start))
